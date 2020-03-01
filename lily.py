@@ -13,9 +13,9 @@ def generate_lily_file(i):
         file.write('}')
 
 
-iterations = 500
+iterations = 5000
 
-for i in range(iterations):
+for i in range(500, iterations):
     generate_lily_file(i)
     os.system(r'path "C:\Program Files (x86)\LilyPond\usr\bin"')
     os.system(r'lilypond -o files\{} files\{}.ly'.format(i, i))
