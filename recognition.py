@@ -58,12 +58,9 @@ def get_locations(path, note, threshold):  # tähe esinemised pildil
             new_loc.append((x, y))
         prev_x, prev_y = pt
 
-    img_rgb_new = img_rgb.copy()
-    w, h = template.shape[::-1]
-    for pt in zip(*loc[::-1]):
-        # rectangle(pilt, algusnurk (koordinaadid), lõppnurk, värv (BGR), joone paksus)
-        cv.rectangle(img_rgb_new, pt, (pt[0] + w, pt[1] + h), (204, 0, 0), 2)
-    cv.imwrite("testing\\rectangles\\" + note + '.png', img_rgb_new)
+    # kontrolliks fail tuvastatud asukohtadega
+    create_image_with_rectangles_for_template(img_rgb, template, loc, note)
+
     return new_loc
 
 
@@ -102,15 +99,22 @@ def clean_result(result):
     next_last = result[len(result) - 2]
     last = result[len(result) - 1]
     last_in_new_result = new_result[len(new_result) - 1]
+
+    # kui viimased kaks nooti on liiga lähestikku
     if abs(next_last[0] - last[0]) < 30 and abs(next_last[1] - last[1]) < 30:
+        # kui eelviimane on prioriteetsem ja pole juba viimane puhastatud järjendis, siis lisame ta sinna
         if (next_last[2], last[2]) in PRIORITY_PAIRS and last_in_new_result != last:
             new_result.append(last)
+        # kui viimane on prioriteetsem ja pole juba viimane puhastatud järjendis, siis lisame ta sinna
         elif (last[2], next_last[2]) in PRIORITY_PAIRS and last_in_new_result != next_last:
             new_result.append(next_last)
+    # kui noodid pole lähestikku
     else:
+        # kui kumbki pole viimane element puhastatud järjendis, siis lisame mõlemad sinna
         if last_in_new_result != next_last and last_in_new_result != last:
             new_result.append(next_last)
             new_result.append(last)
+        # kui eelviimane element on juba viimane puastatud järjendis, siis lisame ainult viimase
         elif last_in_new_result == next_last:
             new_result.append(last)
     return new_result
@@ -134,22 +138,31 @@ def lyrics_from_file(filename):
     rows = [sorted(row, key=lambda el: el[0]) for row in rows]
     flatten_rows = [el for row in rows for el in row]
     result = clean_result(flatten_rows)
-    create_image_with_rectangles(filename, result)
+
     output = [el[2] for el in result]
 
     return output
 
 def create_image_with_rectangles(image_path, locations):
     img = cv.imread(image_path)
+    # malli umbkaudne laius ja kõrgus
     w, h = 50, 130
+    # värvide segamine
     shuffle(COLORS)
     notes = [letter + octave + length for letter in NOTE_LETTERS for octave in NOTE_OCTAVES for length in NOTE_LENGTHS]
+    # igale noodile vastavusse suvaline värv
     colors = dict(zip(notes, COLORS[:len(notes)]))
     for x, y, note in locations:
-        # rectangle(pilt, algusnurk (koordinaadid), lõppnurk, värv (BGR), joone paksus)
         cv.rectangle(img, (x, y), (x + w, y+ h), colors[note], 2)
     cv.imwrite("testing\\rectangles\\result.png", img)
 
+def create_image_with_rectangles_for_template(image, template, loc, note):
+    img_rgb_new = image.copy()
+    w, h = template.shape[::-1]
+    for pt in zip(*loc[::-1]):
+        cv.rectangle(img_rgb_new, pt, (pt[0] + w, pt[1] + h), (204, 0, 0), 2)
+    cv.imwrite("testing\\rectangles\\" + note + '.png', img_rgb_new)
+
 
 if __name__ == "__main__":
-    print(lyrics_from_file("testing\\mary_lamb.png"))
+    print(lyrics_from_file("testing\\test.png"))
