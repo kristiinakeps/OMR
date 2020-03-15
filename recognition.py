@@ -10,12 +10,25 @@ NOTE_OCTAVES = ["'"]
 
 # mallide lävendite jaoks on vaikeväärtus 0.8, osadele on määratud käsitsi
 THRES = defaultdict(lambda: 0.8)
-THRES_VALUES = {"c'1": 0.7, "c'4": 0.8, "d'2": 0.7, "d'4": 0.8, "e'4": 0.85, "f'4": 0.9, "g'2": 0.7, "g'4": 0.8}
+THRES_VALUES = {"c'1": 0.7, "c'2": 0.72, "c'4": 0.85,
+                "d'1": 0.75, "d'2": 0.74, "d'4": 0.87,
+                "e'2": 0.77, "e'4": 0.87,
+                "f'2": 0.77, "f'4": 0.9,
+                "g'1": 0.75, "g'2": 0.75, "g'4": 0.85,
+                "a'4": 0.85, "a'2": 0.75,
+                "b'2": 0.77, "b'4": 0.85
+                }
 for k, v in THRES_VALUES.items():
     THRES[k] = v
 
 PRIORITY = ["c'4", "e'4", "d'4", "g'4"]
-PRIORITY_PAIRS = [("c'4", "e'4"), ("g'4", "e'4"), ("f'4", "d'4"), ("c'4", "e'2")]
+PRIORITY_PAIRS = [("c'1", "e'1"), ("c'2", "c'4"), ("c'2", "e'2"), ("c'2", "e'2"), ("c'4", "e'2"), ("c'4", "e'4"),
+                  ("d'2", "d'4"),
+                  ("e'2", "e'4"),
+                  ("f'2", "f'4"), ("f'4", "d'4"),
+                  ("g'2", "c'2"), ("g'2", "g'4"), ("g'4", "e'4"),
+                  ("a'4", "a'2")
+                  ]
 
 
 def get_locations(path, note, threshold):  # tähe esinemised pildil
@@ -45,7 +58,6 @@ def get_locations(path, note, threshold):  # tähe esinemised pildil
 
 
 def clean_result(result):
-    print(result)
     # puhastatud tulemusjärjend
     new_result = []
     # vaatame läbi kõik kolmikud
@@ -66,8 +78,6 @@ def clean_result(result):
         if (abs(third[0] - choice[0]) < 30) and (abs(third[1] - choice[1]) < 30):
             if (choice[2], third[2]) in PRIORITY_PAIRS:
                 choice = third
-
-        print(first, second, third, choice)
         try:
             # kui puhastatud järjendis viimane noot on liiga lähedal hetkel valitule, siis seda ei lisa
             if new_result[len(new_result) - 1] == choice or (abs( new_result[len(new_result) - 1][0]- choice[0]) < 30) \
@@ -102,12 +112,21 @@ def lyrics_from_file(filename):
     for note in notes:
         loc = get_locations(filename, note, THRES[note])
         result += [(x, y, note) for (x, y) in loc]  # järjendisse lisatakse koordinaadid koos vastava tähega
-    result.sort(key=lambda el: el[0])
-    result = clean_result(result)
+    result.sort(key=lambda el: el[1])  # sorteerime kõik y-koordinaatide järgi, et saada ridade järgi järjestust
+    rows = [[]]
+    y = 0  # hoiame meeles eelmise y-koordnaadi
+    for res in result:
+        if abs(res[1] - y) > 50:  # kui uue elemendi y-koordinaat erineb rohkem kui 50 võrra, siis eeldame et alustasime uue reaga
+            rows.append([])  # iga rea jaoks uus järjend
+        rows[-1].append(res)  # lisame viimasesse ritta
+        y = res[1]
+    rows = [sorted(row, key=lambda el: el[0]) for row in rows]
+    flatten_rows = [el for row in rows for el in row]
+    result = clean_result(flatten_rows)
     output = [el[2] for el in result]
 
     return output
 
 
 if __name__ == "__main__":
-    print(lyrics_from_file("testing\\mary_lamb.png"))
+    print(lyrics_from_file("testing\\test.png"))
