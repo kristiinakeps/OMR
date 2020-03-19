@@ -4,6 +4,8 @@ import cv2 as cv
 import numpy as np
 import os
 
+TEMPLATES_DIR = "modified_templates" + os.path.sep
+
 NOTE_LETTERS = ["c", "d", "e", "f", "g", "a", "b"]
 NOTE_LENGTHS = ["1", "2", "4"]
 NOTE_OCTAVES = ["'"]
@@ -45,7 +47,7 @@ def get_locations(path, note, threshold):  # tähe esinemised pildil
     img_rgb = cv.imread(path)
     # Muuda mustvalgeks
     img_gray = cv.cvtColor(img_rgb, cv.COLOR_BGR2GRAY)
-    template = cv.imread("modified_templates" + os.path.sep + note + '.png', 0)
+    template = cv.imread(TEMPLATES_DIR + note + '.png', 0)
 
     res = cv.matchTemplate(img_gray, template, cv.TM_CCOEFF_NORMED)
     loc = np.where(res >= threshold)
@@ -59,7 +61,7 @@ def get_locations(path, note, threshold):  # tähe esinemised pildil
         prev_x, prev_y = pt
 
     # kontrolliks fail tuvastatud asukohtadega
-    create_image_with_rectangles_for_template(img_rgb, template, loc, note)
+    # create_image_with_rectangles_for_template(img_rgb, template, loc, note)
 
     return new_loc
 
@@ -165,4 +167,5 @@ def create_image_with_rectangles_for_template(image, template, loc, note):
 
 
 if __name__ == "__main__":
-    print(music_from_file("../testing/test.png"))
+    # print(music_from_file("../testing/test.png"))
+    print(os.listdir("."))

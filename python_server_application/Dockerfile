@@ -1,7 +1,7 @@
 FROM python:3.7
-COPY .. /app
+COPY . /app
 WORKDIR /app
-RUN sh lilypond-2.20.0-1.linux-64.sh
+RUN  date && apt-get update && apt-get install -y lilypond
 RUN pip install -r requirements.txt
 ENTRYPOINT ["python"]
 CMD ["app.py"]
