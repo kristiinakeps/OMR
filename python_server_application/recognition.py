@@ -167,5 +167,4 @@ def create_image_with_rectangles_for_template(image, template, loc, note):
 
 
 if __name__ == "__main__":
-    # print(music_from_file("../testing/test.png"))
-    print(os.listdir("."))
+    print(music_from_file("../testing/test.png"))
