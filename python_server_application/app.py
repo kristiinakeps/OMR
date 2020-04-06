@@ -47,7 +47,7 @@ def name_generator(size=8):
 def delete_temporary_files(filename):
     os.remove("{}.png".format(filename))
     os.remove("{}.pdf".format(filename))
-    os.remove("{}.mid".format(filename))
+    os.remove("{}.midi".format(filename))
     os.remove("{}.ly".format(filename))
 
 if __name__ == '__main__':

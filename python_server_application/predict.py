@@ -21,4 +21,4 @@ def create_music_files(notes, filename=FILE_NAME):
 
     # Windowsi jaoks tuleb path ka määrata
     # os.system(r'path "{}"'.format(r"C:\Program Files (x86)\LilyPond\usr\bin"))
-    os.system((r'lilypond {}').format(filename, filename + ".ly"))
+    os.system((r'lilypond {}').format(filename + ".ly"))
