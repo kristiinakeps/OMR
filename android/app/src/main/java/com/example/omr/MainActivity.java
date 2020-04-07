@@ -1,34 +1,107 @@
 package com.example.omr;
 
+import android.animation.Animator;
+import android.animation.AnimatorListenerAdapter;
 import android.os.Bundle;
 
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
-import androidx.appcompat.widget.Toolbar;
-import androidx.core.content.ContextCompat;
-import androidx.core.graphics.drawable.DrawableCompat;
 
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.TextView;
 
 public class MainActivity extends AppCompatActivity {
+    private TextView infoField;
+    private TextView startField;
+    private FloatingActionButton camera;
+    private FloatingActionButton info;
+    private FloatingActionButton upload;
+    private int animationDuration;
+
+    private boolean showInfo = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        FloatingActionButton fab = findViewById(R.id.camera);
-        fab.setOnClickListener(new View.OnClickListener() {
+        infoField = findViewById(R.id.infoView);
+        startField = findViewById(R.id.textView);
+
+        animationDuration = getResources().getInteger(
+                android.R.integer.config_longAnimTime);
+
+        camera = findViewById(R.id.camera);
+        camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
                 Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
                         .setAction("Action", null).show();
             }
         });
+
+        info = findViewById(R.id.info);
+        info.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!showInfo) {
+                    showInfo();
+                } else {
+                    hideInfo();
+                }
+            }
+        });
+
+        upload = findViewById(R.id.upload);
+        upload.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                Snackbar.make(view, "Replace with your own action", Snackbar.LENGTH_LONG)
+                        .setAction("Action", null).show();
+            }
+        });
+    }
+
+    private void showInfo() {
+        infoField.setAlpha(0f);
+        infoField.setVisibility(View.VISIBLE);
+        infoField.animate()
+                .alpha(1f)
+                .setDuration(animationDuration)
+                .setListener(null);
+        startField.animate()
+                .alpha(0f)
+                .setDuration(animationDuration)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        startField.setVisibility(View.GONE);
+                    }
+                });
+        showInfo = true;
+    }
+
+    private void hideInfo() {
+        startField.setAlpha(0f);
+        startField.setVisibility(View.VISIBLE);
+        startField.animate()
+                .alpha(1f)
+                .setDuration(animationDuration)
+                .setListener(null);
+        infoField.animate()
+                .alpha(0f)
+                .setDuration(animationDuration)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        infoField.setVisibility(View.GONE);
+                    }
+                });
+        showInfo = false;
     }
 
     @Override
