@@ -14,13 +14,16 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.snackbar.Snackbar;
 
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import android.os.ConditionVariable;
 import android.provider.MediaStore;
+import android.text.Layout;
 import android.view.View;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -29,17 +32,25 @@ import java.time.LocalDateTime;
 import static android.view.View.GONE;
 
 public class MainActivity extends AppCompatActivity {
+    private LinearLayout imageLayout;
+    private ConstraintLayout infoLayout;
+    private ConstraintLayout startLayout;
     private TextView infoField;
     private TextView startField;
     private ImageView imageView;
     private FloatingActionButton camera;
     private FloatingActionButton info;
     private FloatingActionButton upload;
+    private FloatingActionButton play;
+    private FloatingActionButton download;
     private int animationDuration;
     private PackageManager packageManager;
     private Uri imageUri;
 
+    private boolean showStart = true;
+    private boolean showImage = false;
     private boolean showInfo = false;
+
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int PERMISSIONS_REQUEST_CAMERA = 2;
 
@@ -50,14 +61,25 @@ public class MainActivity extends AppCompatActivity {
 
         packageManager = getPackageManager();
 
+        imageLayout = findViewById(R.id.imageLayout);
+        infoLayout = findViewById(R.id.infoLayout);
+        startLayout = findViewById(R.id.startLayout);
+
         infoField = findViewById(R.id.infoView);
         startField = findViewById(R.id.textView);
         imageView = findViewById(R.id.image);
+        camera = findViewById(R.id.camera);
+        info = findViewById(R.id.info);
+        upload = findViewById(R.id.upload);
+
 
         animationDuration = getResources().getInteger(
                 android.R.integer.config_longAnimTime);
 
-        camera = findViewById(R.id.camera);
+        imageLayout.setVisibility(LinearLayout.GONE);
+        infoLayout.setVisibility(ConstraintLayout.GONE);
+
+
         camera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -73,19 +95,13 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        info = findViewById(R.id.info);
         info.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (!showInfo) {
-                    showInfo();
-                } else {
-                    hideInfo();
-                }
+                toggleInfo();
             }
         });
 
-        upload = findViewById(R.id.upload);
         upload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -113,7 +129,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            showImage();
+            imageView.setImageURI(imageUri);
+            hideInfo();
+            hideStart();
+            showInfo = false;
+            showStart = false;
+            makeImageVisible();
         }
     }
 
@@ -132,51 +153,90 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    private void showImage() {
-        infoField.setVisibility(GONE);
-        startField.setVisibility(GONE);
-        showInfo = false;
-        imageView.setImageURI(imageUri);
-        imageView.setVisibility(View.VISIBLE);
+
+    private void toggleInfo() {
+        if (showInfo) {
+            hideInfo();
+            if (showStart) makeStartVisible();
+            else makeImageVisible();
+        }
+        else if (showStart) {
+            makeInfoVisible();
+            hideStart();
+        } else {
+            makeInfoVisible();
+            hideImage();
+        }
     }
 
-    private void showInfo() {
-        imageView.setVisibility(GONE);
-        infoField.setAlpha(0f);
-        infoField.setVisibility(View.VISIBLE);
-        infoField.animate()
+    private void makeInfoVisible() {
+        infoLayout.setVisibility(ConstraintLayout.VISIBLE);
+        infoLayout.setAlpha(0f);
+        infoLayout.animate()
                 .alpha(1f)
                 .setDuration(animationDuration)
                 .setListener(null);
-        startField.animate()
-                .alpha(0f)
-                .setDuration(animationDuration)
-                .setListener(new AnimatorListenerAdapter() {
-                    @Override
-                    public void onAnimationEnd(Animator animation) {
-                        startField.setVisibility(GONE);
-                    }
-                });
         showInfo = true;
     }
 
-    private void hideInfo() {
-        startField.setAlpha(0f);
-        startField.setVisibility(View.VISIBLE);
-        startField.animate()
+    private void makeStartVisible() {
+        startLayout.setVisibility(ConstraintLayout.VISIBLE);
+        startLayout.setAlpha(0f);
+        startLayout.animate()
                 .alpha(1f)
                 .setDuration(animationDuration)
                 .setListener(null);
-        infoField.animate()
+        showStart = true;
+    }
+
+    private void makeImageVisible() {
+        imageView.setVisibility(View.VISIBLE);
+        imageLayout.setVisibility(LinearLayout.VISIBLE);
+        imageLayout.setAlpha(0f);
+        imageLayout.animate()
+                .alpha(1f)
+                .setDuration(animationDuration)
+                .setListener(null);
+        showImage = true;
+
+    }
+
+    private void hideInfo() {
+        infoLayout.animate()
                 .alpha(0f)
                 .setDuration(animationDuration)
                 .setListener(new AnimatorListenerAdapter() {
                     @Override
                     public void onAnimationEnd(Animator animation) {
-                        infoField.setVisibility(GONE);
+                        infoLayout.setVisibility(ConstraintLayout.GONE);
                     }
                 });
         showInfo = false;
     }
-    
+
+    private void hideStart() {
+        startLayout.animate()
+                .alpha(0f)
+                .setDuration(animationDuration)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        startLayout.setVisibility(ConstraintLayout.GONE);
+                    }
+                });
+    }
+
+    private void hideImage() {
+        imageLayout.animate()
+                .alpha(0f)
+                .setDuration(animationDuration)
+                .setListener(new AnimatorListenerAdapter() {
+                    @Override
+                    public void onAnimationEnd(Animator animation) {
+                        imageLayout.setVisibility(LinearLayout.GONE);
+                    }
+                });
+    }
+
+
 }
