@@ -28,11 +28,9 @@ def save_image_to_file(base64image, filename):
         f.write(base64.b64decode(base64image))
 
 def create_response(filename):
-    with open("{}.pdf".format(filename), "rb") as image_file:
-        base64_predicted_image = base64.b64encode(image_file.read())
     with open("{}.midi".format(filename), "rb") as midi_file:
         base64_predicted_midi = base64.b64encode(midi_file.read())
-    response = {"pdf": base64_predicted_image.decode(), "midi": base64_predicted_midi.decode()}
+    response = {"midi": base64_predicted_midi.decode()}
     return response
 
 def generate_random_name():

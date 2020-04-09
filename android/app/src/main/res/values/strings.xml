@@ -2,5 +2,8 @@
     <string name="app_name">Noodituvastus</string>
     <string name="action_settings">Settings</string>
     <string name="start">Optilise noodituvastusega alustamiseks tee noodist pilt või lae pilt üles!</string>
-    <string name="info">See rakendus suudab tuvastada vaid ühehäälseid meloodiaid väikse oktavi piires. Nootidel ei tohiks olla sidejooni.Pilt peaks olema tehtud hea valgustusega ja otse.</string>
+    <string name="info">Info sulgemiseks vajuta uuesti info nuppu!\n\n\n
+        1. Optilise noodituvastuse jaoks tee pilt kaameraga või lae olemasolev pilt üles.\n\n
+        2. Pilt peaks olema tehtud hea valgustusega ja otse.\n\n
+        3. Rakendus suudab tuvastada vaid ühehäälseid meloodiaid väikse oktavi piires. Nootidel ei tohiks olla sidejooni.</string>
 </resources>
