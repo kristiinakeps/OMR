@@ -6,12 +6,14 @@ import android.animation.AnimatorListenerAdapter;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,15 +26,14 @@ import com.android.volley.Response;
 import com.android.volley.RetryPolicy;
 import com.android.volley.VolleyError;
 import com.android.volley.toolbox.JsonObjectRequest;
-import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.io.FileNotFoundException;
-import java.io.InputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.time.LocalDateTime;
 
 public class MainActivity extends AppCompatActivity {
@@ -48,17 +49,23 @@ public class MainActivity extends AppCompatActivity {
     private FloatingActionButton play;
     private FloatingActionButton download;
     private FloatingActionButton recognize;
+    private ProgressBar progressBar;
     private int animationDuration;
     private PackageManager packageManager;
     private Uri imageUri;
+    private File midiFile;
+    private MediaPlayer mediaPlayer;
 
     private boolean showStart = true;
     private boolean showImage = false;
     private boolean showInfo = false;
+    private boolean playing = false;
 
     private final Recognitionservice recognitionservice = new Recognitionservice();
     RequestQueue queue;
-    String url ="https://musicrecognition.herokuapp.com/";
+
+    String url = "https://musicrecognition.herokuapp.com/";
+    String midiFileName = "music.midi";
 
     static final int REQUEST_IMAGE_CAPTURE = 1;
     static final int PERMISSIONS_REQUEST_CAMERA = 2;
@@ -70,7 +77,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-         queue = Volley.newRequestQueue(this);
+        queue = Volley.newRequestQueue(this);
 
         packageManager = getPackageManager();
 
@@ -85,10 +92,14 @@ public class MainActivity extends AppCompatActivity {
         info = findViewById(R.id.info);
         upload = findViewById(R.id.upload);
         recognize = findViewById(R.id.recognize);
+        play = findViewById(R.id.play);
+        download = findViewById(R.id.download);
+        progressBar = findViewById(R.id.progressBar);
 
 
         animationDuration = getResources().getInteger(
                 android.R.integer.config_longAnimTime);
+        midiFile = new File(getFilesDir(), midiFileName);
 
         imageLayout.setVisibility(LinearLayout.GONE);
         infoLayout.setVisibility(ConstraintLayout.GONE);
@@ -131,36 +142,24 @@ public class MainActivity extends AppCompatActivity {
         recognize.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-//                    StringRequest stringRequest = new StringRequest(Request.Method.POST, url,
-//                            new Response.Listener<String>() {
-//                                @Override
-//                                public void onResponse(String response) {
-//                                    System.out.println(response);
-//                                }
-//                            }, new Response.ErrorListener() {
-//                        @Override
-//                        public void onErrorResponse(VolleyError error) {
-//                            System.out.println(error);
-//                            Toast.makeText(getApplicationContext(), "Tekkis viga! Palun proovige uuesti.", Toast.LENGTH_LONG).show();
-//                        }
-//                    }) {
-//                        @Override
-//                        public byte[] getBody() {
-//                            try {
-//                                return recognitionservice.imageToBase64(getContentResolver().openInputStream(imageUri));
-//                            } catch (Exception e) {
-//                                e.printStackTrace();
-//                                return null;
-//                            }
-//                        }
-//                    };
-//                    queue.add(stringRequest);
-//            }
-                try{
+                try {
                     String base64 = recognitionservice.imageToBase64(getContentResolver().openInputStream(imageUri));
                     postData(base64);
                 } catch (Exception e) {
                     e.printStackTrace();
+                }
+            }
+        });
+
+        play.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (!mediaPlayer.isPlaying()) {
+                    mediaPlayer.start();
+                    play.setImageResource(R.drawable.ic_pause);
+                } else {
+                    mediaPlayer.pause();
+                    play.setImageResource(R.drawable.ic_play);
                 }
             }
         });
@@ -185,21 +184,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == RESULT_OK) {
-            imageView.setImageURI(imageUri);
-            hideInfo();
-            hideStart();
-            showInfo = false;
-            showStart = false;
-            makeImageVisible();
+            showImage();
         } else if (requestCode == REQUEST_IMAGE_UPLOAD && resultCode == RESULT_OK && data != null) {
-            Uri selectedImage =  data.getData();
-            imageUri = selectedImage;
-            imageView.setImageURI(imageUri);
-            hideInfo();
-            hideStart();
-            showInfo = false;
-            showStart = false;
-            makeImageVisible();
+            imageUri = data.getData();
+            showImage();
+        } else {
+            errorToast();
         }
     }
 
@@ -210,24 +200,17 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-        switch (requestCode) {
-            case PERMISSIONS_REQUEST_CAMERA: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+            switch (requestCode) {
+                case PERMISSIONS_REQUEST_CAMERA:
                     dispatchTakePictureIntent();
-                } else {
-                    Toast.makeText(this, "Rakendusel pole vajalikke ligipääse", Toast.LENGTH_LONG).show();
-                }
-                break;
-            }
-            case PERMISSION_REQUEST_UPLOAD: {
-                if (grantResults.length > 0
-                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                    break;
+                case PERMISSION_REQUEST_UPLOAD:
                     dispatchUploadPictureIntent();
-                } else {
-                    Toast.makeText(this, "Rakendusel pole vajalikke ligipääse", Toast.LENGTH_LONG).show();
-                }
+                    break;
             }
+        } else {
+            Toast.makeText(this, R.string.permissions_denied, Toast.LENGTH_LONG).show();
         }
     }
 
@@ -277,6 +260,15 @@ public class MainActivity extends AppCompatActivity {
 
     }
 
+    private void showImage() {
+        imageView.setImageURI(imageUri);
+        hideInfo();
+        hideStart();
+        showInfo = false;
+        showStart = false;
+        makeImageVisible();
+    }
+
     private void hideInfo() {
         infoLayout.animate()
                 .alpha(0f)
@@ -317,12 +309,13 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    // Post Request For JSONObject
     public void postData(String base64) {
+        recognize.hide();
+        progressBar.setVisibility(View.VISIBLE);
         RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
         JSONObject object = new JSONObject();
         try {
-            object.put("image",base64);
+            object.put("image", base64);
         } catch (JSONException e) {
             e.printStackTrace();
         }
@@ -330,14 +323,21 @@ public class MainActivity extends AppCompatActivity {
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        System.out.println("String Response : "+ response.toString());
-                        Toast.makeText(getApplicationContext(), "Õnnestus!", Toast.LENGTH_LONG).show();
+                        progressBar.setVisibility(View.GONE);
+                        try {
+                            writeMidiFile((String) response.get("midi"));
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                            errorToast();
+                        }
+                        setupMediaPlayer();
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                System.out.println(error);
-                Toast.makeText(getApplicationContext(), "Tekkis viga! Palun proovige uuesti.", Toast.LENGTH_LONG).show();
+                progressBar.setVisibility(View.GONE);
+                recognize.show();
+                errorToast();
             }
         });
         jsonObjectRequest.setRetryPolicy(new RetryPolicy() {
@@ -352,11 +352,32 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void retry(VolleyError error) throws VolleyError {
-
-            }
+            public void retry(VolleyError error) throws VolleyError { }
         });
         requestQueue.add(jsonObjectRequest);
+    }
+
+    private void setupMediaPlayer() {
+        mediaPlayer = MediaPlayer.create(getApplicationContext(), Uri.fromFile(midiFile));
+        mediaPlayer.setOnCompletionListener(new MediaPlayer.OnCompletionListener() {
+            public void onCompletion(MediaPlayer mediaPlayer) {
+                mediaPlayer.seekTo(0);
+                play.setImageResource(R.drawable.ic_play);
+            }
+        });
+        play.show();
+    }
+
+    private void writeMidiFile(String base64midi) {
+        try (FileOutputStream out = new FileOutputStream(midiFile)) {
+            out.write(recognitionservice.midi(base64midi));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void errorToast() {
+        Toast.makeText(getApplicationContext(), R.string.error, Toast.LENGTH_LONG).show();
     }
 
 

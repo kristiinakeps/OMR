@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">Noodituvastus</string>
-    <string name="action_settings">Settings</string>
+    <string name="permissions_denied">Rakendusel pole vajalikke ligipääse</string>
+    <string name="error">Tekkis viga! Palun proovige uuesti.</string>
     <string name="start">Optilise noodituvastusega alustamiseks tee noodist pilt või lae pilt üles!</string>
     <string name="info">Info sulgemiseks vajuta uuesti info nuppu!\n\n\n
         1. Optilise noodituvastuse jaoks tee pilt kaameraga või lae olemasolev pilt üles.\n\n

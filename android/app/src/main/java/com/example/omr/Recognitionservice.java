@@ -7,15 +7,17 @@ import java.util.Base64;
 
 public class Recognitionservice {
 
+    public byte[] midi(String encodedString) {
+        byte[] decodedBytes = Base64.getDecoder().decode(encodedString);
+        return decodedBytes;
+    }
+
 
     public String imageToBase64(InputStream inputStream) throws Exception{
         byte[] bytes = getBytes(inputStream);
         inputStream.close();
         if (bytes == null) return null;
-        String encodedString = Base64.getEncoder().encodeToString(bytes);
-//        String body = String.format("{\"image\": \"%s\"}", encodedString);
-//        return body.getBytes("utf-8");
-        return encodedString;
+        return Base64.getEncoder().encodeToString(bytes);
     }
 
     private byte[] getBytes(InputStream inputStream) {
