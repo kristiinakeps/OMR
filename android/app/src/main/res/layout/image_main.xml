@@ -6,6 +6,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".MainActivity"
+
     tools:showIn="@layout/activity_main"
     android:id="@+id/imageLayout">
 
@@ -15,6 +16,8 @@
         android:layout_height="400dp"
         android:layout_marginTop="50dp"
         android:scaleType="centerCrop"
+        android:outlineProvider="bounds"
+        android:elevation="5dp"
         android:layout_gravity="center" />
 
     <LinearLayout

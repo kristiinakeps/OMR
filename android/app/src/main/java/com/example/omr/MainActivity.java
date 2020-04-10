@@ -188,8 +188,6 @@ public class MainActivity extends AppCompatActivity {
         } else if (requestCode == REQUEST_IMAGE_UPLOAD && resultCode == RESULT_OK && data != null) {
             imageUri = data.getData();
             showImage();
-        } else {
-            errorToast();
         }
     }
 
