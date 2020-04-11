@@ -9,6 +9,7 @@ import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.view.View;
 import android.widget.ImageView;
@@ -34,6 +35,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.nio.file.Files;
 import java.time.LocalDateTime;
 
 public class MainActivity extends AppCompatActivity {
@@ -164,6 +166,14 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        download.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View view) {
+                                            userSaveMidi();
+                                        }
+                                    }
+        );
+
     }
 
     // https://developer.android.com/training/camera/photobasics
@@ -264,6 +274,7 @@ public class MainActivity extends AppCompatActivity {
         hideStart();
         showInfo = false;
         showStart = false;
+        showRecognizeButton();
         makeImageVisible();
     }
 
@@ -307,9 +318,26 @@ public class MainActivity extends AppCompatActivity {
                 });
     }
 
-    public void postData(String base64) {
+    private void showRecognizeButton() {
+        play.hide();
+        download.hide();
+        progressBar.setVisibility(View.GONE);
+        recognize.show();
+    }
+
+    private void showProgressBar() {
         recognize.hide();
         progressBar.setVisibility(View.VISIBLE);
+    }
+
+    private void showPlayButton() {
+        progressBar.setVisibility(View.GONE);
+        play.show();
+        download.show();
+    }
+
+    public void postData(String base64) {
+        showProgressBar();
         RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
         JSONObject object = new JSONObject();
         try {
@@ -321,7 +349,6 @@ public class MainActivity extends AppCompatActivity {
                 new Response.Listener<JSONObject>() {
                     @Override
                     public void onResponse(JSONObject response) {
-                        progressBar.setVisibility(View.GONE);
                         try {
                             writeMidiFile((String) response.get("midi"));
                         } catch (JSONException e) {
@@ -329,19 +356,19 @@ public class MainActivity extends AppCompatActivity {
                             errorToast();
                         }
                         setupMediaPlayer();
+                        showPlayButton();
                     }
                 }, new Response.ErrorListener() {
             @Override
             public void onErrorResponse(VolleyError error) {
-                progressBar.setVisibility(View.GONE);
-                recognize.show();
+                showRecognizeButton();
                 errorToast();
             }
         });
         jsonObjectRequest.setRetryPolicy(new RetryPolicy() {
             @Override
             public int getCurrentTimeout() {
-                return 50000;
+                return 100000;
             }
 
             @Override
@@ -350,7 +377,8 @@ public class MainActivity extends AppCompatActivity {
             }
 
             @Override
-            public void retry(VolleyError error) throws VolleyError { }
+            public void retry(VolleyError error) throws VolleyError {
+            }
         });
         requestQueue.add(jsonObjectRequest);
     }
@@ -363,7 +391,6 @@ public class MainActivity extends AppCompatActivity {
                 play.setImageResource(R.drawable.ic_play);
             }
         });
-        play.show();
     }
 
     private void writeMidiFile(String base64midi) {
@@ -376,6 +403,25 @@ public class MainActivity extends AppCompatActivity {
 
     private void errorToast() {
         Toast.makeText(getApplicationContext(), R.string.error, Toast.LENGTH_LONG).show();
+    }
+
+    private void userSaveMidi() {
+        try {
+            File dir = new File(Environment.getExternalStorageDirectory() + File.separator + "Noodituvastus");
+
+            if (!dir.exists() && !dir.isDirectory()) {
+                dir.mkdirs();
+            }
+            File file = new File(dir + "/salvestis " + LocalDateTime.now() + ".midi");
+            file.createNewFile();
+            try (FileOutputStream fOut = new FileOutputStream(file)) {
+                fOut.write(Files.readAllBytes(midiFile.toPath()));
+                Toast.makeText(getApplicationContext(), R.string.salvestatud, Toast.LENGTH_LONG).show();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            errorToast();
+        }
     }
 
 
