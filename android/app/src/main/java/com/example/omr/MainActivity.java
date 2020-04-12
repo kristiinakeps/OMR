@@ -64,7 +64,7 @@ public class MainActivity extends AppCompatActivity {
     private boolean playing = false;
 
     private final Recognitionservice recognitionservice = new Recognitionservice();
-    RequestQueue queue;
+    private RequestQueue queue;
 
     String url = "https://musicrecognition.herokuapp.com/";
     String midiFileName = "music.midi";
@@ -73,6 +73,7 @@ public class MainActivity extends AppCompatActivity {
     static final int PERMISSIONS_REQUEST_CAMERA = 2;
     static final int PERMISSION_REQUEST_UPLOAD = 3;
     static final int REQUEST_IMAGE_UPLOAD = 4;
+    static final int REQUEST_TAG = 5;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -274,6 +275,7 @@ public class MainActivity extends AppCompatActivity {
         hideStart();
         showInfo = false;
         showStart = false;
+        queue.cancelAll(REQUEST_TAG);
         showRecognizeButton();
         makeImageVisible();
     }
@@ -338,7 +340,6 @@ public class MainActivity extends AppCompatActivity {
 
     public void postData(String base64) {
         showProgressBar();
-        RequestQueue requestQueue = Volley.newRequestQueue(getApplicationContext());
         JSONObject object = new JSONObject();
         try {
             object.put("image", base64);
@@ -380,7 +381,8 @@ public class MainActivity extends AppCompatActivity {
             public void retry(VolleyError error) throws VolleyError {
             }
         });
-        requestQueue.add(jsonObjectRequest);
+        jsonObjectRequest.setTag(REQUEST_TAG);
+        queue.add(jsonObjectRequest);
     }
 
     private void setupMediaPlayer() {
