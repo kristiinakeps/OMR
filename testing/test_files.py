@@ -58,5 +58,5 @@ def generate_testing_file():
 
 
 if __name__ == "__main__":
-    # get_image_from_pdf("testing\\mary_lamb.pdf")
-    generate_testing_file()
+    get_image_from_pdf("test_rythm.pdf")
+    # generate_testing_file()

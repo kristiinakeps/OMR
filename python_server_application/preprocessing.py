@@ -12,10 +12,7 @@ def preprocessed_data(image_bytes):
     decoded = cv.imdecode(np.frombuffer(image_bytes, np.uint8), -1)
     img_gray = cv.cvtColor(decoded, cv.COLOR_BGR2GRAY)
 
-    # img_blur = cv.GaussianBlur(img_gray, (BLUR_KERNEL, BLUR_KERNEL), 0)
-    img_blur = img_gray
-
-    thres, img_black_and_white = cv.threshold(img_blur, 127, 255, cv.THRESH_BINARY)
+    thres, img_black_and_white = cv.threshold(img_gray, 127, 255, cv.THRESH_BINARY)
     cv.imwrite('../testing/tulemus.png', img_black_and_white)
 
     staffs = staff.staff_detection(img_gray)
@@ -29,23 +26,23 @@ def preprocessed_data(image_bytes):
 
 
 if __name__ == "__main__":
-    with open("../testing/camera.jpg", "rb") as f:
+    # with open("../testing/camera.jpg", "rb") as f:
     # with open("../testing/mary_lamb.png", "rb") as f:
+    # with open("../testing/test.png", "rb") as f:
+    with open("../testing/test_rythm.png", "rb") as f:
     # with open("../testing/high.png", "rb") as f:
         image_bytes = f.read()
     res = preprocessed_data(image_bytes)
     if res is not None:
         result, staffs, space, size_difference = res
         coordinates_and_notes, rows = staff.group_and_identify(staffs, space, size_difference)
-        co_list = sorted(list(coordinates_and_notes.items()), key=lambda x: x[0])
-        print(co_list)
-        print(rows)
+        # co_list = sorted(list(coordinates_and_notes.items()), key=lambda x: x[0])
+        # print(co_list)
+        # print(rows)
 
         import recognition2
-        locs = recognition2.get_locations(result, 0.6)
-        heights = recognition2.calculate_heights(locs, coordinates_and_notes, rows)
-        cleaned = recognition2.clean_rows(heights)
-        print(cleaned)
+        locs = recognition2.recognize_all_symbols(result, coordinates_and_notes, rows)
+        print(locs)
 
     # if result is not None:
     #     cv.imwrite('../testing/tulemus2.png', result)
