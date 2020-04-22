@@ -56,7 +56,7 @@ def calculate_height(location, coordinates_and_notes):
     closest = min(coordinates_and_notes.keys(), key=lambda x: abs(x-note_center_y))
     return coordinates_and_notes[closest]
 
-def clean_rows(rows):
+def clean_rows(rows, min_distance):
     cleaned = []
     for row in rows:
         cleaned.append([])
@@ -64,19 +64,25 @@ def clean_rows(rows):
             row = sorted(row, key=lambda x: x[0])
             cleaned[-1].append(row[0])
             for i in range(1, len(row)):
-                if abs(row[i][0] - cleaned[-1][-1][0]) > 30:  # 30 is the average template width * 1.5
+                if abs(row[i][0] - cleaned[-1][-1][0]) > min_distance:
                     cleaned[-1].append(row[i])
     return cleaned
 
 def add_flags_to_notes(note_rows, flag_rows):
     for i in range(len(flag_rows)):
-        print(note_rows[i])
         for flag in flag_rows[i]:
-            print(flag)
             x, y, length = flag
-            note_index = note_rows[i].index(min(note_rows[i], key=lambda el: abs(x - el[0])))
-            print(note_index)
-            note_rows[i][note_index] = (note_rows[i][note_index][0], note_rows[i][note_index][1], note_rows[i][note_index][2], length)
+            if len(note_rows[i]) > 0:
+                note_index = note_rows[i].index(min(note_rows[i], key=lambda el: abs(x - el[0])))
+                note_rows[i][note_index] = (note_rows[i][note_index][0], note_rows[i][note_index][1], note_rows[i][note_index][2], length)
+
+def add_connected_flags_to_notes(note_rows, flag_rows, note_width):
+    for i in range(len(flag_rows)):
+        for flag in flag_rows[i]:
+            x, y, length = flag
+            if len(note_rows[i]) > 0:
+                note_index = note_rows[i].index(min(min(note_rows[i], key=lambda el: abs(x - el[0])), min(note_rows[i], key=lambda el: abs(x + note_width - el[0]))))
+                note_rows[i][note_index] = (note_rows[i][note_index][0], note_rows[i][note_index][1], note_rows[i][note_index][2], length)
 
 
 
@@ -84,26 +90,54 @@ def recognize_all_symbols(img_black_and_white, coordinates_and_notes, rows):
     quarter_note_path = '../testing/quarter.png'
     locs_quarter = get_locations(img_black_and_white, 0.6, quarter_note_path, 4, 5)
     heights_quarter = calculate_heights_and_divide_to_rows(locs_quarter, coordinates_and_notes, rows)
-    cleaned_quarter = clean_rows(heights_quarter)
-    print(cleaned_quarter)
-    flag_path = '../testing/flag.png'
-    locs_flag = get_locations(img_black_and_white, 0.6, flag_path, 8, 5)
-    flag_rows = divide_to_rows(locs_flag, rows)
-    cleaned_flags = clean_rows(flag_rows)
-    print(cleaned_flags)
+    cleaned_quarter = clean_rows(heights_quarter, 30)
 
-    add_flags_to_notes(cleaned_quarter, cleaned_flags)
+    flag_8_path = '../testing/flag_8.png'
+    locs_flag_8 = get_locations(img_black_and_white, 0.6, flag_8_path, 8, 5)
+    flag_rows_8 = divide_to_rows(locs_flag_8, rows)
+    cleaned_flags_8 = clean_rows(flag_rows_8, 30)
+
+    flag_8_upside_path = '../testing/flag_8_upside.png'
+    locs_flag_8_upside = get_locations(img_black_and_white, 0.6, flag_8_upside_path, 8, 5)
+    flag_rows_8_upside = divide_to_rows(locs_flag_8_upside, rows)
+    cleaned_flags_8_upside = clean_rows(flag_rows_8_upside, 30)
+
+    flag_16_path = '../testing/flag_16.png'
+    locs_flag_16 = get_locations(img_black_and_white, 0.6, flag_16_path, 16, 5)
+    flag_rows_16 = divide_to_rows(locs_flag_16, rows)
+    cleaned_flags_16 = clean_rows(flag_rows_16, 30)
+
+    flag_16_upside_path = '../testing/flag_16_upside.png'
+    locs_flag_16_upside = get_locations(img_black_and_white, 0.6, flag_16_upside_path, 16, 5)
+    flag_rows_16_upside = divide_to_rows(locs_flag_16_upside, rows)
+    cleaned_flags_16_upside = clean_rows(flag_rows_16_upside, 30)
+
+    connected_8_path = '../testing/connected_8.png'
+    locs_connected_8 = get_locations(img_black_and_white, 0.8, connected_8_path, 8, 0)
+    connected_8_rows = divide_to_rows(locs_connected_8, rows)
+    cleaned_connected_8 = clean_rows(connected_8_rows, 10)
+
+    connected_16_path = '../testing/connected_16.png'
+    locs_connected_16 = get_locations(img_black_and_white, 0.8, connected_16_path, 16, 0)
+    connected_16_rows = divide_to_rows(locs_connected_16, rows)
+    cleaned_connected_16 = clean_rows(connected_16_rows, 10)
+
+    add_flags_to_notes(cleaned_quarter, cleaned_flags_8)
+    add_flags_to_notes(cleaned_quarter, cleaned_flags_8_upside)
+    add_flags_to_notes(cleaned_quarter, cleaned_flags_16)
+    add_flags_to_notes(cleaned_quarter, cleaned_flags_16_upside)
+    add_connected_flags_to_notes(cleaned_quarter, cleaned_connected_8, 13)
+    add_connected_flags_to_notes(cleaned_quarter, cleaned_connected_16, 16)
 
     whole_note_path = '../testing/whole_empty.png'
     locs_whole = get_locations(img_black_and_white, 0.6, whole_note_path, 1, 5)
     heights_whole = calculate_heights_and_divide_to_rows(locs_whole, coordinates_and_notes, rows)
-    cleaned_whole = clean_rows(heights_whole)
+    cleaned_whole = clean_rows(heights_whole, 30)
 
     half_note_path = '../testing/half_empty.png'
     locs_half = get_locations(img_black_and_white, 0.6, half_note_path, 2, 5)
     heights_half = calculate_heights_and_divide_to_rows(locs_half, coordinates_and_notes, rows)
-    cleaned_half = clean_rows(heights_half)
-    print(cleaned_half)
+    cleaned_half = clean_rows(heights_half, 30)
 
     combined = []
     for i in range(len(rows)):
@@ -111,5 +145,15 @@ def recognize_all_symbols(img_black_and_white, coordinates_and_notes, rows):
         combined[i].extend(cleaned_quarter[i])
         combined[i].extend(cleaned_half[i])
         combined[i].extend(cleaned_whole[i])
+
+    for row in combined:
+        for el in row:
+            if len(el[1]) > 2 or el[1] == "b'":
+                y = -10
+            else:
+                y = 30
+            img_black_and_white = cv.putText(img_black_and_white, el[1] + str(el[3]), (el[0], el[2] + y),
+                                     cv.FONT_HERSHEY_DUPLEX, 0.75, (0, 0, 255), 1)
+    cv.imwrite('../testing/tuvastus_perfektne.png', img_black_and_white)
 
     return combined
