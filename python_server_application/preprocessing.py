@@ -28,26 +28,18 @@ def preprocessed_data(image_bytes):
 if __name__ == "__main__":
     # with open("../testing/camera.jpg", "rb") as f:
     # with open("../testing/mary_lamb.png", "rb") as f:
+    with open("../testing/prediction.png", "rb") as f:
     # with open("../testing/test.png", "rb") as f:
-    with open("../testing/test_rythm.png", "rb") as f:
+    # with open("../testing/test_rythm.png", "rb") as f:
     # with open("../testing/high.png", "rb") as f:
         image_bytes = f.read()
     res = preprocessed_data(image_bytes)
     if res is not None:
-        result, staffs, space, size_difference = res
-        coordinates_and_notes, rows = staff.group_and_identify(staffs, space, size_difference)
-        # co_list = sorted(list(coordinates_and_notes.items()), key=lambda x: x[0])
-        # print(co_list)
-        # print(rows)
-
         import recognition2
+        result, staffs, space, size_difference = res
+        clef = recognition2.get_clef(result)
+        is_treble = True if clef == 'treble' else False
+        coordinates_and_notes, rows = staff.group_and_identify(staffs, space, size_difference, is_treble)
         locs = recognition2.recognize_all_symbols(result, coordinates_and_notes, rows)
         print(locs)
-
-    # if result is not None:
-    #     cv.imwrite('../testing/tulemus2.png', result)
-
-    # decoded = cv.imdecode(np.frombuffer(image_bytes, np.uint8), -1)
-    # decoded = cv.rotate(decoded, cv.ROTATE_180)
-    # cv.imwrite('../testing/tulemus2.png', result)
 

@@ -1,8 +1,10 @@
 \version "2.20.0"
 \score {
     \new Staff {
+        \clef bass
+        \key ges \major
         \time 4/4
-            e'4 d'4 c'4 d'4 e'4 e'4 e'2 d'4 d'4 d'2 e'4 g'4 g'2 e'4 d'4 c'4 d'4 e'4 e'4 e'4 e'4 d'4 d'4 e'4 d'4 c'1
+            e4 d4 c4 d4 e4 e4 e2 d4 d4 d2 e4 g4 g2 e4 d4 c4 d4 e4 e4 e4 e4 d4 d4 e4 d4 c1
     }
     \midi { }
     \layout { }

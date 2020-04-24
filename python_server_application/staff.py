@@ -8,6 +8,10 @@ NOTES_ON_LINES_TREBLE = ["e'", "f'", "g'", "a'", "b'", "c''", "d''", "e''", "f''
 NOTES_ABOVE_TOP_LINE_TREBLE = ["g''", "a''", "b''", "c'''", "d'''", "e'''", "f'''", "g'''", "a'''", "b'''"]
 NOTES_BELOW_BOTTOM_LINE_TREBLE = ["d'", "c'", "b", "a", "g", "f", "e", "d"]
 
+NOTES_ON_LINES_BASS = ["g,", "a,", "b,", "c", "d", "e", "f", "g", "a"]
+NOTES_ABOVE_TOP_LINE_BASS = ["b", "c'", "d'", "e'", "f'", "g'", "a'", "b'", "c''", "d''"]
+NOTES_BELOW_BOTTOM_LINE_BASS = ["f,", "e,", "d,", "c,", "b,,", "a,,", "g,,", "f,,"]
+
 
 def horizontal_projection(binary_image):
     pixels_in_row = binary_image.shape[1] * 255
@@ -40,7 +44,7 @@ def staff_detection(img):
     edges = cv.Canny(img, 50, 150, apertureSize=3)
     points_on_line = 400
     lines = cv.HoughLines(edges, 1, np.pi / 180, points_on_line)
-    while len(lines) < 5 and points_on_line >= 200:
+    while lines is None or len(lines) < 5 and points_on_line >= 200:
         points_on_line -= 50
         lines = cv.HoughLines(edges, 1, np.pi / 180, points_on_line)
 
@@ -57,7 +61,7 @@ def staff_detection(img):
             x2 = int(x0 - width * (-b))
             y2 = int(y0 - width * (a))
 
-        cv.line(img, (x1, y1), (x2, y2), (204, 0, 0), 1)
+            cv.line(img, (x1, y1), (x2, y2), (204, 0, 0), 1)
 
     cv.imwrite('../testing/tulemus.png', img)
 
@@ -133,28 +137,15 @@ def find_space_between_lines(lines):
             frequency[space] = 1
         else:
             frequency[space] += 1
-    # frequency_grouped = {}
-    # keys = list(frequency.keys())
-    # keys.sort()
-    # for key in keys:
-    #     added = False
-    #     for i in range(-3, 3):
-    #         if key + i in frequency_grouped:
-    #             frequency_grouped[key + i] += frequency[key]
-    #             added = True
-    #             break
-    #     if not added:
-    #         frequency_grouped[key] = frequency[key]
-    # return max(frequency_grouped, key=frequency_grouped.get)
     return max(frequency, key=frequency.get)
 
 """Combines the group_lines and identify_lines methods.
     arguments: staff line y-coordinates
     returns: coordinates and notes dictionary"""
-def group_and_identify(staffs, space, size_difference):
+def group_and_identify(staffs, space, size_difference, is_treble):
     staffs = [round(staff * size_difference) for staff in staffs]
     grouped = group_lines(staffs, space)
-    identified, rows = identify_lines(grouped, space)
+    identified, rows = identify_lines(grouped, space, is_treble)
     return identified, rows
 
 
@@ -181,10 +172,10 @@ def group_lines(staffs, space):
     returns: dictionary of coordinates and the note heights, start and end y-coordinate tuple of each row"""
 
 
-def identify_lines(grouped, space):
+def identify_lines(grouped, space, is_treble):
     coordinates_and_notes = {}
     row_start_and_end = []
-    notes_on_line_and_above = NOTES_ON_LINES_TREBLE + NOTES_ABOVE_TOP_LINE_TREBLE
+    notes_on_line_and_above = NOTES_ON_LINES_TREBLE + NOTES_ABOVE_TOP_LINE_TREBLE if is_treble else NOTES_ON_LINES_BASS + NOTES_ABOVE_TOP_LINE_BASS
     for group in grouped:
         coordinates_and_notes_for_row = {}
         index_of_last_note_on_line = (len(group) - 1) * 2 - 1
@@ -199,18 +190,9 @@ def identify_lines(grouped, space):
                 coordinates_and_notes_for_row[group[0]] = notes_on_line_and_above[i]
             else:
                 coordinates_and_notes_for_row[group[0] - (i - index_of_last_note_on_line + 1) * space / 2] = notes_on_line_and_above[i]
+        notes_below_bottom_line = NOTES_BELOW_BOTTOM_LINE_TREBLE if is_treble else NOTES_BELOW_BOTTOM_LINE_BASS
         for i in range(0, 6):  # notes below the bottom line
-            coordinates_and_notes_for_row[group[-1] + (i + 1) * space / 2] = NOTES_BELOW_BOTTOM_LINE_TREBLE[i]
+            coordinates_and_notes_for_row[group[-1] + (i + 1) * space / 2] = notes_below_bottom_line[i]
         row_start_and_end.append((min(coordinates_and_notes_for_row.keys()), max(coordinates_and_notes_for_row.keys())))
         coordinates_and_notes.update(coordinates_and_notes_for_row)
     return coordinates_and_notes, row_start_and_end
-
-        # if len(group) == 5:
-        #     for i in range(len(group) - 1):  # notes on the lines and between them
-        #         coordinates_and_notes[group[i]] = NOTES_ON_LINES_TREBLE[i * 2]
-        #         coordinates_and_notes[group[i] + (group[i + 1] - group[i]) / 2] = NOTES_ON_LINES_TREBLE[i * 2 + 1]
-        #         if i == len(group) - 2:
-        #             coordinates_and_notes[group[-1]] = NOTES_ON_LINES_TREBLE[i * 2 + 2]
-        #     for i in range(0, 6):  # notes below the bottom line and above the top line
-        #         coordinates_and_notes[group[0] - (i + 1) * space / 2] = NOTES_BELOW_BOTTOM_LINE_TREBLE[i]
-        #         coordinates_and_notes[group[-1] + (i + 1) * space / 2] = NOTES_ABOVE_TOP_LINE_TREBLE[i]
