@@ -11,20 +11,30 @@ FLAT_SUFFIX = 'es'
 TEMPOS_AND_PATHS = {'4/4': '../testing/tempo_4_4.png', '3/4': '../testing/tempo_3_4.png',
                     '2/4': '../testing/tempo_2_4.png', '2/2': '../testing/tempo_2_2.png',
                     '6/8': '../testing/tempo_6_8.png'}
+
 QUARTER_NOTE_PATH = '../testing/quarter.png'
 WHOLE_NOTE_PATH = '../testing/whole.png'
 HALF_NOTE_PATH = '../testing/half.png'
+
 FLAG_8_PATH = '../testing/flag_8.png'
 FLAG_8_UPSIDE_PATH = '../testing/flag_8_upside.png'
 FLAG_16_PATH = '../testing/flag_16.png'
 FLAG_16_UPSIDE_PATH = '../testing/flag_16_upside.png'
 CONNECTED_FLAGS_8_PATH = '../testing/connected_8.png'
 CONNECTED_FLAGS_16_PATH = '../testing/connected_16.png'
+
 CLEF_TREBLE_PATH = '../testing/clef_treble.png'
 CLEF_BASS_PATH = '../testing/clef_bass.png'
+
 SHARP_PATH = '../testing/sharp.png'
 FLAT_PATH = '../testing/flat.png'
 BECARRE_PATH = '../testing/becarre.png'
+
+REST_1_PATH = "../testing/r1.png"
+REST_2_PATH = "../testing/r2.png"
+REST_4_PATH = "../testing/r4.png"
+REST_8_PATH = "../testing/r8.png"
+REST_16_PATH = "../testing/r16.png"
 
 
 def get_locations(img_black_and_white, threshold, template_path, length,
@@ -131,8 +141,8 @@ def recognize_one_symbol(path, threshold, length, distance_to_center, min_distan
 
 def recognize_symbol_without_height(path, threshold, length, distance_to_center, min_distance_between, img, rows):
     locs = get_locations(img, threshold, path, length, distance_to_center)
-    flag_rows = divide_to_rows(locs, rows)
-    cleaned = clean_rows(flag_rows, min_distance_between)
+    rows = divide_to_rows(locs, rows)
+    cleaned = clean_rows(rows, min_distance_between)
     return cleaned
 
 
@@ -170,8 +180,11 @@ def get_number_of_key_accidentals(img, rows, notes, path):
         if len(notes[i]) > 0:
             first_coordinate = notes[i][0][0]
             number_in_row.append(len([sharp for sharp in cleaned[i] if sharp[0] < first_coordinate - 20]))
-    most_common_number = max(set(number_in_row), key=number_in_row.count)
-    return most_common_number
+    if len(number_in_row) < 1:
+        return 0
+    else:
+        most_common_number = max(set(number_in_row), key=number_in_row.count)
+        return most_common_number
 
 
 def get_and_add_accidentals_to_notes(img, rows, notes):
@@ -198,7 +211,7 @@ def correct_notes_accidentals(accidentals, notes, suffix, rows):
                     notes[i][note_index] = (notes[i][note_index][0], new_note, notes[i][note_index][2],  notes[i][note_index][3])
 
 
-def get_notes_and_pauses(img, coordinates_and_notes, rows):
+def get_notes(img, coordinates_and_notes, rows):
     quarter = recognize_one_symbol(QUARTER_NOTE_PATH, 0.6, 4, 5, 30, img, coordinates_and_notes, rows)
     flags_8 = recognize_symbol_without_height(FLAG_8_PATH, 0.65, 8, 5, 30, img, rows)
     flags_8_upside = recognize_symbol_without_height(FLAG_8_UPSIDE_PATH, 0.7, 8, 5, 30, img, rows)
@@ -226,6 +239,22 @@ def get_notes_and_pauses(img, coordinates_and_notes, rows):
         combined[i].sort(key=lambda el: el[0])
     return combined
 
+def get_rests(img, rows):
+    rest_1 = [[(rest[0], "r", rest[1], rest[2]) for rest in row] for row in recognize_symbol_without_height(REST_1_PATH, 0.7, 1, 0, 30, img, rows)]
+    rest_2 = [[(rest[0], "r", rest[1], rest[2]) for rest in row] for row in recognize_symbol_without_height(REST_2_PATH, 0.7, 2, 0, 30, img, rows)]
+    rest_4 = [[(rest[0], "r", rest[1], rest[2]) for rest in row] for row in recognize_symbol_without_height(REST_4_PATH, 0.7, 4, 0, 20, img, rows)]
+    rest_8 = [[(rest[0], "r", rest[1], rest[2]) for rest in row] for row in  recognize_symbol_without_height(REST_8_PATH, 0.8, 8, 0, 20, img, rows)]
+    rest_16 = [[(rest[0], "r", rest[1], rest[2]) for rest in row] for row in recognize_symbol_without_height(REST_16_PATH, 0.7, 16, 0, 25, img, rows)]
+    combined = []
+    for i in range(len(rows)):
+        combined.append([])
+        combined[i].extend(rest_1[i])
+        combined[i].extend(rest_2[i])
+        combined[i].extend(rest_4[i])
+        combined[i].extend(rest_8[i])
+        combined[i].extend(rest_16[i])
+    return combined
+
 
 def correct_note_heights_key(key, notes):
     if key == 'c':
@@ -245,11 +274,15 @@ def recognize_all_symbols(img_black_and_white, coordinates_and_notes, rows):
     time_signature = get_time_signature(img_black_and_white)
     clef = get_clef(img_black_and_white)
 
-    combined = get_notes_and_pauses(img_black_and_white, coordinates_and_notes, rows)
+    combined = get_notes(img_black_and_white, coordinates_and_notes, rows)
 
     key = get_key(img_black_and_white, rows, combined)
     correct_note_heights_key(key, combined)
     get_and_add_accidentals_to_notes(img_black_and_white, rows, combined)
+
+    rests = get_rests(img_black_and_white, rows)
+    for i in range(len(combined)):
+        combined[i].extend(rests[i])
 
     for row in combined:
         for el in row:
