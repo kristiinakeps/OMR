@@ -24,6 +24,7 @@ CLEF_TREBLE_PATH = '../testing/clef_treble.png'
 CLEF_BASS_PATH = '../testing/clef_bass.png'
 SHARP_PATH = '../testing/sharp.png'
 FLAT_PATH = '../testing/flat.png'
+BECARRE_PATH = '../testing/becarre.png'
 
 
 def get_locations(img_black_and_white, threshold, template_path, length,
@@ -128,7 +129,7 @@ def recognize_one_symbol(path, threshold, length, distance_to_center, min_distan
     return cleaned
 
 
-def recognize_flags(path, threshold, length, distance_to_center, min_distance_between, img, rows):
+def recognize_symbol_without_height(path, threshold, length, distance_to_center, min_distance_between, img, rows):
     locs = get_locations(img, threshold, path, length, distance_to_center)
     flag_rows = divide_to_rows(locs, rows)
     cleaned = clean_rows(flag_rows, min_distance_between)
@@ -162,11 +163,8 @@ def get_key(img, rows, notes):
     return KEY_SIGNATURES_SHARP[number_of_sharps]
 
 
-
 def get_number_of_key_accidentals(img, rows, notes, path):
-    locs = get_locations(img, 0.5, path, 0, 0)
-    in_rows = divide_to_rows(locs, rows)
-    cleaned = clean_rows(in_rows, 10)
+    cleaned = recognize_symbol_without_height(path, 0.5, 0, 0, 10, img, rows)
     number_in_row = []
     for i in range(len(rows)):
         if len(notes[i]) > 0:
@@ -176,14 +174,38 @@ def get_number_of_key_accidentals(img, rows, notes, path):
     return most_common_number
 
 
+def get_and_add_accidentals_to_notes(img, rows, notes):
+    sharps = recognize_symbol_without_height(SHARP_PATH, 0.7, 0, 0, 10, img, rows)
+    correct_notes_accidentals(sharps, notes, SHARP_SUFFIX, rows)
+
+    flats = recognize_symbol_without_height(FLAT_PATH, 0.7, 0, 0, 10, img, rows)
+    correct_notes_accidentals(flats, notes, FLAT_SUFFIX, rows)
+
+    becarres = recognize_symbol_without_height(BECARRE_PATH, 0.7, 0, 0, 10, img, rows)
+    correct_notes_accidentals(becarres, notes, '', rows)
+
+def correct_notes_accidentals(accidentals, notes, suffix, rows):
+    for i in range(len(rows)):
+        if len(notes[i]) > 0:
+            for accidental in accidentals[i]:
+                x, y, length = accidental
+                note_index = notes[i].index(min(notes[i], key=lambda el: abs(x - el[0])))
+                if abs(notes[i][note_index][0] - x) < 30:
+                    if suffix == '':
+                        new_note = notes[i][note_index][1].replace(SHARP_SUFFIX, "").replace(FLAT_SUFFIX, "")
+                    else:
+                        new_note = notes[i][note_index][1][0] + suffix + notes[i][note_index][1][1:]
+                    notes[i][note_index] = (notes[i][note_index][0], new_note, notes[i][note_index][2],  notes[i][note_index][3])
+
+
 def get_notes_and_pauses(img, coordinates_and_notes, rows):
     quarter = recognize_one_symbol(QUARTER_NOTE_PATH, 0.6, 4, 5, 30, img, coordinates_and_notes, rows)
-    flags_8 = recognize_flags(FLAG_8_PATH, 0.65, 8, 5, 30, img, rows)
-    flags_8_upside = recognize_flags(FLAG_8_UPSIDE_PATH, 0.7, 8, 5, 30, img, rows)
-    flags_16 = recognize_flags(FLAG_16_PATH, 0.6, 16, 5, 30, img, rows)
-    flags_16_upside = recognize_flags(FLAG_16_UPSIDE_PATH, 0.6, 16, 5, 30, img, rows)
-    connected_flags_8 = recognize_flags(CONNECTED_FLAGS_8_PATH, 0.8, 8, 0, 10, img, rows)
-    connected_flags_16 = recognize_flags(CONNECTED_FLAGS_16_PATH, 0.8, 16, 0, 10, img, rows)
+    flags_8 = recognize_symbol_without_height(FLAG_8_PATH, 0.65, 8, 5, 30, img, rows)
+    flags_8_upside = recognize_symbol_without_height(FLAG_8_UPSIDE_PATH, 0.7, 8, 5, 30, img, rows)
+    flags_16 = recognize_symbol_without_height(FLAG_16_PATH, 0.6, 16, 5, 30, img, rows)
+    flags_16_upside = recognize_symbol_without_height(FLAG_16_UPSIDE_PATH, 0.6, 16, 5, 30, img, rows)
+    connected_flags_8 = recognize_symbol_without_height(CONNECTED_FLAGS_8_PATH, 0.8, 8, 0, 10, img, rows)
+    connected_flags_16 = recognize_symbol_without_height(CONNECTED_FLAGS_16_PATH, 0.8, 16, 0, 10, img, rows)
 
     add_flags_to_notes(quarter, flags_8)
     add_flags_to_notes(quarter, flags_8_upside)
@@ -204,29 +226,30 @@ def get_notes_and_pauses(img, coordinates_and_notes, rows):
         combined[i].sort(key=lambda el: el[0])
     return combined
 
+
 def correct_note_heights_key(key, notes):
     if key == 'c':
         return
     is_sharp = key in KEY_SIGNATURES_SHARP
     suffix = SHARP_SUFFIX if is_sharp else FLAT_SUFFIX
-    accidentals = SHARPS_ORDER[:KEY_SIGNATURES_SHARP.index(key)] if is_sharp else FLATS_ORDER[:KEY_SIGNATURES_FLAT.index(key)]
+    accidentals = SHARPS_ORDER[:KEY_SIGNATURES_SHARP.index(key)] if is_sharp else FLATS_ORDER[
+                                                                                  :KEY_SIGNATURES_FLAT.index(key)]
     for row in range(len(notes)):
         for note in range(len(notes[row])):
             if notes[row][note][1][0] in accidentals:
                 new_note = notes[row][note][1][0] + suffix + notes[row][note][1][1:]
                 notes[row][note] = notes[row][note][0], new_note, notes[row][note][2], notes[row][note][3]
 
+
 def recognize_all_symbols(img_black_and_white, coordinates_and_notes, rows):
     time_signature = get_time_signature(img_black_and_white)
-    print(time_signature)
     clef = get_clef(img_black_and_white)
-    print(clef)
 
     combined = get_notes_and_pauses(img_black_and_white, coordinates_and_notes, rows)
 
     key = get_key(img_black_and_white, rows, combined)
-    print(key)
     correct_note_heights_key(key, combined)
+    get_and_add_accidentals_to_notes(img_black_and_white, rows, combined)
 
     for row in combined:
         for el in row:
