@@ -409,6 +409,7 @@ def recognize_all_symbols(img_black_and_white, coordinates_and_notes, rows):
     flat = []
     for row in combined:
         row.sort(key=lambda el: el[0])
-        flat.extend(row)
+        notes = [el[1] for el in row]
+        flat.extend(notes)
 
     return flat, time_signature, clef, key

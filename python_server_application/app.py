@@ -21,10 +21,10 @@ def omr():
     image_bytes = base64.b64decode(base64image)
     res = preprocessing.preprocessed_data(image_bytes)
     if res is not None:
-        result, staffs, space, size_difference = res
+        result, staff_lines, space, size_difference = res
         clef = recognition.get_clef(result)
         is_treble = True if clef == 'treble' else False
-        coordinates_and_notes, rows = staffs.group_and_identify(staffs, space, size_difference, is_treble)
+        coordinates_and_notes, rows = staffs.group_and_identify(staff_lines, space, size_difference, is_treble)
         notes, time_signature, clef, key = recognition.recognize_all_symbols(result, coordinates_and_notes, rows)
         if len(notes) < 1:
             response = create_response("", "Ei suutnud tuvastada ühtegi nooti! Kontrolli, et pilt oleks selge!")
@@ -88,7 +88,6 @@ def name_generator(size=8):
 
 
 def delete_temporary_files(filename):
-    os.remove("{}.pdf".format(filename))
     os.remove("{}.midi".format(filename))
     os.remove("{}.ly".format(filename))
 
