@@ -6,8 +6,10 @@ TEMPLATE_STAFF_SPACE = 14
 BLUR_KERNEL = 3
 
 """Applies binarization and staff detection to the given image, resizes the image.
-    arguments: image as a byte array
-    returns: resized image, array with staff locations, float that represents the space between staff lines"""
+    :param: image as a byte array
+    :return: resized image, array with staff locations, float that represents the space between staff lines"""
+
+
 def preprocessed_data(image_bytes):
     decoded = cv.imdecode(np.frombuffer(image_bytes, np.uint8), -1)
     img_gray = cv.cvtColor(decoded, cv.COLOR_BGR2GRAY)
@@ -24,22 +26,21 @@ def preprocessed_data(image_bytes):
         return img_sized, staffs, space_between_staffs, size_difference
 
 
-
 if __name__ == "__main__":
-    # with open("../testing/camera.jpg", "rb") as f:
-    # with open("../testing/mary_lamb.png", "rb") as f:
-    with open("../testing/prediction.png", "rb") as f:
-    # with open("../testing/test.png", "rb") as f:
-    # with open("../testing/test_rythm.png", "rb") as f:
-    # with open("../testing/high.png", "rb") as f:
+    with open("../testing/camera.jpg", "rb") as f:
+        # with open("../testing/mary_lamb.png", "rb") as f:
+        # with open("../testing/prediction.png", "rb") as f:
+        # with open("../testing/test.png", "rb") as f:
+        # with open("../testing/test_rythm.png", "rb") as f:
+        # with open("../testing/high.png", "rb") as f:
         image_bytes = f.read()
     res = preprocessed_data(image_bytes)
     if res is not None:
-        import recognition2
+        import recognition
+
         result, staffs, space, size_difference = res
-        clef = recognition2.get_clef(result)
+        clef = recognition.get_clef(result)
         is_treble = True if clef == 'treble' else False
         coordinates_and_notes, rows = staff.group_and_identify(staffs, space, size_difference, is_treble)
-        locs = recognition2.recognize_all_symbols(result, coordinates_and_notes, rows)
+        locs = recognition.recognize_all_symbols(result, coordinates_and_notes, rows)
         print(locs)
-
