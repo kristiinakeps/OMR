@@ -7,5 +7,5 @@
     <string name="info">Info sulgemiseks vajuta uuesti info nuppu!\n\n\n
         1. Optilise noodituvastuse jaoks tee pilt kaameraga või lae olemasolev pilt üles.\n\n
         2. Pilt peaks olema tehtud hea valgustusega ja otse.\n\n
-        3. Rakendus suudab tuvastada vaid ühehäälseid meloodiaid väikse oktavi piires. Nootidel ei tohiks olla sidejooni.</string>
+        3. Rakendus suudab tuvastada vaid ühehäälseid meloodiaid.</string>
 </resources>

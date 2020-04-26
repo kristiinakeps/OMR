@@ -61,9 +61,8 @@ public class MainActivity extends AppCompatActivity {
     private boolean showStart = true;
     private boolean showImage = false;
     private boolean showInfo = false;
-    private boolean playing = false;
 
-    private final Recognitionservice recognitionservice = new Recognitionservice();
+    private final RecognitionService recognitionService = new RecognitionService();
     private RequestQueue queue;
 
     String url = "https://musicrecognition.herokuapp.com/";
@@ -146,7 +145,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 try {
-                    String base64 = recognitionservice.imageToBase64(getContentResolver().openInputStream(imageUri));
+                    String base64 = recognitionService.imageToBase64(getContentResolver().openInputStream(imageUri));
                     postData(base64);
                 } catch (Exception e) {
                     e.printStackTrace();
@@ -351,13 +350,20 @@ public class MainActivity extends AppCompatActivity {
                     @Override
                     public void onResponse(JSONObject response) {
                         try {
-                            writeMidiFile((String) response.get("midi"));
+                            String message = (String) response.get("message");
+                            if (message.isEmpty()) {
+                                writeMidiFile((String) response.get("midi"));
+                                setupMediaPlayer();
+                                showPlayButton();
+                            }
+                            else {
+                                Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
+                                showRecognizeButton();
+                            }
                         } catch (JSONException e) {
                             e.printStackTrace();
                             errorToast();
                         }
-                        setupMediaPlayer();
-                        showPlayButton();
                     }
                 }, new Response.ErrorListener() {
             @Override
@@ -374,7 +380,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public int getCurrentRetryCount() {
-                return 50000;
+                return 100000;
             }
 
             @Override
@@ -397,7 +403,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void writeMidiFile(String base64midi) {
         try (FileOutputStream out = new FileOutputStream(midiFile)) {
-            out.write(recognitionservice.midi(base64midi));
+            out.write(recognitionService.midi(base64midi));
         } catch (Exception e) {
             e.printStackTrace();
         }

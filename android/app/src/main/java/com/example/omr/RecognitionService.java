@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Base64;
 
-public class Recognitionservice {
+public class RecognitionService {
 
     public byte[] midi(String encodedString) {
         byte[] decodedBytes = Base64.getDecoder().decode(encodedString);
