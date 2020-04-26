@@ -2,14 +2,16 @@ import os
 
 BAR = "\\bar\"|\""
 TEMPLATE = """\\version "2.18.0"
-\score {{
+\\score {{
     \\new Staff {{
         \\clef {clef}
         \\key {key} \major
         \\time {time}
             {notes}
     }}
-    \\midi {{ }}
+    \\midi {{
+        \\tempo 4 = 100
+     }}
 }}"""
 
 # testimiseks
