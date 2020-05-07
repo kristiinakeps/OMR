@@ -35,7 +35,7 @@ def omr():
             delete_temporary_files(random_name)
     else:
         response = create_response("",
-                                   "Ei suutnud tuvastada noodijooni. Kontrolli kas noodijooned on pildil sirged ja pilt on selge!")
+                                   "Ei suutnud tuvastada noodijooni. Kontrolli, kas noodijooned on pildil sirged ja pilt on selge!")
 
     return jsonify(response)
 

@@ -14,7 +14,7 @@ def preprocessed_data(image_bytes):
     decoded = cv.imdecode(np.frombuffer(image_bytes, np.uint8), -1)
     img_gray = cv.cvtColor(decoded, cv.COLOR_BGR2GRAY)
 
-    thres, img_black_and_white = cv.threshold(img_gray, 127, 255, cv.THRESH_BINARY)
+    img_black_and_white = cv.adaptiveThreshold(img_gray, 255, cv.ADAPTIVE_THRESH_MEAN_C, cv.THRESH_BINARY, 61, 8)
     cv.imwrite('../testing/tulemus.png', img_black_and_white)
 
     staff_lines = staffs.staff_detection(img_gray)

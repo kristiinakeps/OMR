@@ -39,7 +39,7 @@ import java.nio.file.Files;
 import java.time.LocalDateTime;
 
 public class MainActivity extends AppCompatActivity {
-    private LinearLayout imageLayout;
+    private ConstraintLayout imageLayout;
     private ConstraintLayout infoLayout;
     private ConstraintLayout startLayout;
     private TextView infoField;
@@ -133,8 +133,9 @@ public class MainActivity extends AppCompatActivity {
         upload.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-                    requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                if (checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED ||
+                        checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+                    requestPermissions(new String[]{Manifest.permission.READ_EXTERNAL_STORAGE, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                             PERMISSION_REQUEST_UPLOAD);
                 } else {
                     dispatchUploadPictureIntent();
@@ -218,7 +219,7 @@ public class MainActivity extends AppCompatActivity {
                     break;
             }
         } else {
-            Toast.makeText(this, R.string.permissions_denied, Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), R.string.permissions_denied, Toast.LENGTH_LONG).show();
         }
     }
 
@@ -355,8 +356,7 @@ public class MainActivity extends AppCompatActivity {
                                 writeMidiFile((String) response.get("midi"));
                                 setupMediaPlayer();
                                 showPlayButton();
-                            }
-                            else {
+                            } else {
                                 Toast.makeText(getApplicationContext(), message, Toast.LENGTH_LONG).show();
                                 showRecognizeButton();
                             }
