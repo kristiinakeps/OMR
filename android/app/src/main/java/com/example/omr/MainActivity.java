@@ -3,11 +3,13 @@ package com.example.omr;
 import android.Manifest;
 import android.animation.Animator;
 import android.animation.AnimatorListenerAdapter;
+import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.media.MediaPlayer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -35,6 +37,7 @@ import org.json.JSONObject;
 
 import java.io.File;
 import java.io.FileOutputStream;
+import java.io.OutputStream;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
 
@@ -415,22 +418,37 @@ public class MainActivity extends AppCompatActivity {
 
     private void userSaveMidi() {
         try {
-            File dir = new File(Environment.getExternalStorageDirectory() + File.separator + "Noodituvastus");
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                ContentResolver resolver = getApplicationContext()
+                        .getContentResolver();
+                Uri audioCollection = MediaStore.Audio.Media.getContentUri(
+                        MediaStore.VOLUME_EXTERNAL_PRIMARY);
+                ContentValues newSongDetails = new ContentValues();
+                newSongDetails.put(MediaStore.Audio.Media.DISPLAY_NAME,
+                        "/salvestis " + LocalDateTime.now() + ".midi");
 
-            if (!dir.exists() && !dir.isDirectory()) {
-                dir.mkdirs();
-            }
-            File file = new File(dir + "/salvestis " + LocalDateTime.now() + ".midi");
-            file.createNewFile();
-            try (FileOutputStream fOut = new FileOutputStream(file)) {
-                fOut.write(Files.readAllBytes(midiFile.toPath()));
-                Toast.makeText(getApplicationContext(), R.string.salvestatud, Toast.LENGTH_LONG).show();
+                Uri uri = resolver
+                        .insert(audioCollection, newSongDetails);
+                try (OutputStream stream = resolver.openOutputStream(uri)) {
+                    stream.write(Files.readAllBytes(midiFile.toPath()));
+                    Toast.makeText(getApplicationContext(), R.string.salvestatud, Toast.LENGTH_LONG).show();
+                }
+            } else {
+                File dir = new File(Environment.getExternalStorageDirectory() + File.separator + "Noodituvastus");
+
+                if (!dir.exists() && !dir.isDirectory()) {
+                    dir.mkdirs();
+                }
+                File file = new File(dir + "/salvestis " + LocalDateTime.now() + ".midi");
+                file.createNewFile();
+                try (FileOutputStream fOut = new FileOutputStream(file)) {
+                    fOut.write(Files.readAllBytes(midiFile.toPath()));
+                    Toast.makeText(getApplicationContext(), R.string.salvestatud, Toast.LENGTH_LONG).show();
+                }
             }
         } catch (Exception e) {
             e.printStackTrace();
             errorToast();
         }
     }
-
-
 }
